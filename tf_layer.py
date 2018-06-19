@@ -8,7 +8,7 @@ def batch_norm(x, name="batch_norm"):
     return tf.contrib.layers.batch_norm(x, decay=0.9, updates_collections=None, epsilon=1e-5, scale=True, scope=name)
 
 
-def instance_norm(input, name="instance_norm"):
+def instance_norm_2d(input, name="instance_norm_2d"):
     with tf.variable_scope(name):
         depth = input.get_shape()[3]
         scale = tf.get_variable("scale", [depth], initializer=tf.random_normal_initializer(
@@ -20,6 +20,10 @@ def instance_norm(input, name="instance_norm"):
         inv = tf.rsqrt(variance + epsilon)
         normalized = (input-mean)*inv
         return scale*normalized + offset
+
+
+def instance_norm_1d(input, name="instance_norm_1d"):
+    return tf.contrib.layers.instance_norm(input, epsilon=1e-5, scale=True, scope=name)
 
 
 def conv2d(input_, output_dim, ks=4, s=2, stddev=0.02, padding='SAME', name="conv2d"):
@@ -48,6 +52,7 @@ def conv1d(input_, output_dim, input_c=1, ks=4, s=2, stddev=0.2, padding='SAME',
 
 def deconv1d(input_, output_shape, input_c=1, ks=4, s=2, stddev=0.2, padding='SAME', name="deconv1d"):
     with tf.variable_scope(name):
+        # output_shape[1] = strides * input_[1]
         filter = w_variable([ks, output_shape[2], input_c])
         return tf.contrib.nn.conv1d_transpose(value=input_, output_shape=output_shape, filter=filter, stride=s, padding=padding, name=name)
 
@@ -72,3 +77,13 @@ def linear(input_, output_size, scope=None, stddev=0.02, bias_start=0.0, with_w=
             return tf.matmul(input_, matrix) + bias, matrix, bias
         else:
             return tf.matmul(input_, matrix) + bias
+
+
+def affine(input_, output_dim=3, name="affine"):
+    with tf.variable_scope(name):
+        return slim.fully_connected(inputs=input_, num_outputs=output_dim, activation_fn=None, scope=name)
+
+
+def flatten(input_, name="flatten"):
+    with tf.variable_scope(name):
+        return slim.flatten(inputs=input_, scope=name)
